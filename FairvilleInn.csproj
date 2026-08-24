@@ -1,0 +1,14 @@
+<Project Sdk="Godot.NET.Sdk/4.7.1">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FairvilleInn</RootNamespace>
+    <AssemblyName>FairvilleInn</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src\Presentation\**\*.cs" />
+    <ProjectReference Include="src\Application\FairvilleInn.Application.csproj" />
+    <ProjectReference Include="src\Infrastructure\FairvilleInn.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

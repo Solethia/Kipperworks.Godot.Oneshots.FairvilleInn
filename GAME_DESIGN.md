@@ -6,10 +6,13 @@ Living game-design document. This captures the current direction at a broad leve
 
 **Working title:** Oneshot - Fairville Inn
 **Engine:** Godot 4.7
-**Current project type:** 3D prototype
+**Current project type:** 2D isometric prototype
 **Status:** Early exploration
 
 Fairville Inn is an oneshot-scoped scenario based on TTRPG-inspired world systems. It is a small, focused game set around an inn in the town of Fairville. The player experience, genre, and final scope are intentionally still being defined.
+
+## Graphics
+2D isometric graphics inspired by baldurs gate 1 & 2.
 
 ## Vision
 
@@ -27,6 +30,7 @@ The player should feel:
 ## Setting
 
 Fairville is a small community whose inn acts as a meeting point for locals, travelers, and unusual events. The inn should provide a compact setting that can be expanded gradually without requiring a large open world.
+The player is a adventurer that has recently arrived to the region. They come one day to
 
 ### Tone and style
 
@@ -248,6 +252,11 @@ Entered through a hole in the Inn basement.
 - Prefer signals for communication between independent objects.
 - Keep global state small and intentional.
 - Test frequently with an exported build.
+- Use C# project boundaries for Clean Architecture:
+  - `Domain` contains pure game rules and state.
+  - `Application` contains use cases and owns ports/interfaces.
+  - `Infrastructure` implements Application ports.
+  - Godot-facing `Presentation` code composes the implementations.
 
 ## Art and audio direction
 
