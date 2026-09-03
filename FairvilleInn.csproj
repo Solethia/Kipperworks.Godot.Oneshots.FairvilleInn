@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Compile Include="src\Presentation\**\*.cs" />
+    <Compile Include="src\Tooling\**\*.cs" />
     <ProjectReference Include="src\Application\FairvilleInn.Application.csproj" />
     <ProjectReference Include="src\Infrastructure\FairvilleInn.Infrastructure.csproj" />
   </ItemGroup>

@@ -1,0 +1,10 @@
+{
+  "type": "floor",
+  "name": "stone",
+  "display_name": "Stone floor",
+  "footprint": [
+    1,
+    1
+  ],
+  "height": 0
+}

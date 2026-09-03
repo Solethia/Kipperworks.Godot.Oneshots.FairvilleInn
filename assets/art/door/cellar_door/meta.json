@@ -1,0 +1,10 @@
+{
+  "type": "door",
+  "name": "cellar_door",
+  "display_name": "cellar door",
+  "footprint": [
+    1,
+    1
+  ],
+  "height": 0
+}

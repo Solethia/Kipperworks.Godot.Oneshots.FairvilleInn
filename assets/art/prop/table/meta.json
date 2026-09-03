@@ -1,0 +1,10 @@
+{
+  "type": "prop",
+  "name": "table",
+  "display_name": "Table",
+  "footprint": [
+    1,
+    1
+  ],
+  "height": 64
+}

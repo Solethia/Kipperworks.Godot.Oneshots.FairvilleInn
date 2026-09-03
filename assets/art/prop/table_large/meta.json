@@ -1,0 +1,10 @@
+{
+  "type": "prop",
+  "name": "table_large",
+  "display_name": "Large table",
+  "footprint": [
+    2,
+    2
+  ],
+  "height": 32
+}
