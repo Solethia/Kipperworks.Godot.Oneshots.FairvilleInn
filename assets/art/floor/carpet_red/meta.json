@@ -1,0 +1,10 @@
+{
+  "type": "floor",
+  "name": "carpet_red",
+  "display_name": "Carpet Red",
+  "footprint": [
+    1,
+    1
+  ],
+  "height": 64
+}

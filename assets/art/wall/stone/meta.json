@@ -1,0 +1,10 @@
+{
+  "type": "wall",
+  "name": "stone",
+  "display_name": "Stone wall",
+  "footprint": [
+    1,
+    1
+  ],
+  "height": 0
+}

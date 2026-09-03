@@ -1,0 +1,10 @@
+{
+  "type": "wall",
+  "name": "plaster",
+  "display_name": "Plaster wall",
+  "footprint": [
+    1,
+    1
+  ],
+  "height": 0
+}
