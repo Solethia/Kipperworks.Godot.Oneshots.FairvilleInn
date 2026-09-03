@@ -41,10 +41,15 @@ public partial class ArtCli : Node
                 break;
             case "new":
             {
-                var size = args.Length > 4 ? args[4].Split('x') : ["1", "1"];
-                var meta = Scaffolder.Create(args[1], args[2], args.Length > 3 ? args[3] : null,
-                    int.Parse(size[0]), int.Parse(size.Length > 1 ? size[1] : size[0]),
-                    args.Length > 5 ? int.Parse(args[5]) : 0);
+                const string usage = "usage: new <type> <name> [display] [WxH] [height]";
+                if (args.Length is < 3 or > 6)
+                {
+                    throw new PipelineException(usage);
+                }
+
+                var (w, h) = args.Length > 4 ? ParseSize(args[4], usage) : (1, 1);
+                var height = args.Length > 5 ? ParseInt(args[5], "height", usage) : 0;
+                var meta = Scaffolder.Create(args[1], args[2], args.Length > 3 ? args[3] : null, w, h, height);
                 GD.Print(Paths.Global(meta.FolderRes));
                 break;
             }
@@ -58,6 +63,11 @@ public partial class ArtCli : Node
                 break;
             case "preview":
             {
+                if (args.Length != 3)
+                {
+                    throw new PipelineException("usage: preview <type> <name>");
+                }
+
                 Packer.PackAll();
                 RoomBuilder.BuildAll();
                 var meta = AssetMeta.All(args[1]).FirstOrDefault(m => m.Name == args[2])
@@ -82,5 +92,28 @@ public partial class ArtCli : Node
                 GD.Print("commands: placeholders | new <type> <name> [display] [WxH] [height] | pack | rooms | preview <type> <name> | validate");
                 break;
         }
+    }
+
+    private static (int W, int H) ParseSize(string text, string usage)
+    {
+        var parts = text.Split('x');
+        if (parts.Length is < 1 or > 2)
+        {
+            throw new PipelineException($"bad size '{text}': expected W or WxH\n{usage}");
+        }
+
+        var w = ParseInt(parts[0], "size", usage);
+        var h = parts.Length > 1 ? ParseInt(parts[1], "size", usage) : w;
+        return (w, h);
+    }
+
+    private static int ParseInt(string text, string what, string usage)
+    {
+        if (!int.TryParse(text, out var value) || value < 0)
+        {
+            throw new PipelineException($"bad {what} '{text}': expected a non-negative integer\n{usage}");
+        }
+
+        return value;
     }
 }
