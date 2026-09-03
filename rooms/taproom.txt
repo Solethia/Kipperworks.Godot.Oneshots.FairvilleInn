@@ -1,0 +1,23 @@
+# Fairville Inn – taproom with the cellar door on the east wall.
+# See ART_PIPELINE.md for the format. Rebuild via the Art Pipeline window or:
+#   godot --headless --path . tools/art_cli.tscn -- rooms
+door D: cellar_door
+visitor M: Innkeeper Marla | Evening, traveller. Take a seat by the fire. | Odd noises from the cellar lately. Nobody wants to look. | Room's yours if you've got the coin.
+prop T: table_large
+---
+##################
+#................#
+#..TT.......TT...#
+#..TT.......TT...#
+#................#
+#......M.........#
+#................######
+#..TT......TT....#,,,,#
+#..TT......TT....D,,,,#
+#................#,,,,#
+#........P.......######
+#................#
+#..TT.......TT...#
+#..TT.......TT...#
+#................#
+##################

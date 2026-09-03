@@ -260,7 +260,10 @@ Entered through a hole in the Inn basement.
 
 ## Art and audio direction
 
-To be decided. The first art pass should prioritize readability, atmosphere, and rapid iteration over production detail.
+2D isometric in the spirit of Baldur's Gate 1 & 2: 64×32 diamond tiles, 8-direction
+character sheets, pre-rendered/painted look. The asset contract (sizes, anchors,
+folder layout, room authoring) lives in `ART_PIPELINE.md`. The first art pass
+prioritizes readability, atmosphere, and rapid iteration over production detail.
 
 ## Milestones
 

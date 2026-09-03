@@ -1,12 +1,1 @@
-# Godot 4+ specific ignores
-.godot/
-/android/
-
-# .NET and IDE build artifacts
-**/bin/
-**/obj/
-/.vs/
-*.user
-*.suo
-*.old
-*.cs.uid
+# Godot 4+ specific ignores.godot//android/# .NET and IDE build artifacts**/bin/**/obj//.vs/*.user*.suo*.old*.cs.uid

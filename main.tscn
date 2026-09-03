@@ -1,7 +1,63 @@
-[gd_scene format=3 uid="uid://bs1gsq1jkclrp"]
+[gd_scene load_steps=8 format=3 uid="uid://bs1gsq1jkclrp"]
 
 [ext_resource type="Script" uid="uid://c851yfmavhrwm" path="res://src/Presentation/Main.cs" id="1"]
+[ext_resource type="Script" path="res://src/Presentation/UI/MessageLabel.cs" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/rooms/taproom.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="4"]
+[ext_resource type="Script" path="res://src/Presentation/World/OcclusionFader.cs" id="5"]
+[ext_resource type="Script" path="res://src/Presentation/World/HoverHighlighter.cs" id="6"]
+[ext_resource type="Shader" path="res://assets/shaders/outline.gdshader" id="7"]
 
-[node name="Main" type="Node2D" unique_id=121766408]
-y_sort_enabled = true
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_room"]
+parsed_geometry_type = 2
+source_geometry_mode = 1
+source_geometry_group_name = &"navigation_source"
+agent_radius = 12.0
+
+[node name="Main" type="Node2D"]
 script = ExtResource("1")
+PlayerScene = ExtResource("4")
+RoomScene = ExtResource("3")
+
+[node name="Navigation" type="NavigationRegion2D" parent="."]
+navigation_polygon = SubResource("NavigationPolygon_room")
+
+[node name="OcclusionFader" type="Node2D" parent="."]
+script = ExtResource("5")
+WallsPath = NodePath("../Room/Walls")
+PropsPath = NodePath("../Room/Props")
+
+[node name="HoverHighlighter" type="Node2D" parent="."]
+script = ExtResource("6")
+OutlineShader = ExtResource("7")
+
+[node name="ClickMarker" type="Polygon2D" parent="." groups=["click_marker"]]
+visible = false
+z_index = -1
+polygon = PackedVector2Array(0, -6, 12, 0, 0, 6, -12, 0)
+color = Color(1, 0.9, 0.5, 0.8)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Instructions" type="Label" parent="UI"]
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 440.0
+offset_bottom = 52.0
+text = "Left-click to walk · click a door or person to interact"
+
+[node name="Message" type="Label" parent="UI"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -80.0
+offset_right = 400.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+autowrap_mode = 3
+script = ExtResource("2")

@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Presentation/Interactables/DoorNode.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/generated/props/cellar_door.png" id="2"]
+
+[sub_resource type="CircleShape2D" id="trigger"]
+radius = 40.0
+
+[node name="CellarDoor" type="Area2D"]
+script = ExtResource("1")
+DoorName = "cellar door"
+
+[node name="Leaf" type="Sprite2D" parent="."]
+texture = ExtResource("2")
+offset = Vector2(0, -32)
+hframes = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("trigger")
+
+[node name="Blocker" type="StaticBody2D" parent="."]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Blocker"]
+polygon = PackedVector2Array(-32, 0, 0, -16, 32, 0, 0, 16)
