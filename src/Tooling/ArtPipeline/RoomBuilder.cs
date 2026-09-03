@@ -75,7 +75,15 @@ public static class RoomBuilder
                 case "wall": room.Walls[ch] = value; break;
                 case "door": room.Doors[ch] = (parts[0], parts.Length > 1 ? parts[1] : null); break;
                 case "prop": room.Props[ch] = value.Split(' ')[0]; break;
-                case "visitor": room.Visitors[ch] = (parts[0], parts[1..]); break;
+                case "visitor":
+                    if (parts.Length < 2 || parts[0].Length == 0 || parts.Skip(1).Any(l => l.Length == 0))
+                    {
+                        throw new PipelineException(
+                            $"{name}: visitor '{ch}' needs a name and at least one dialogue line: 'visitor {ch}: <name> | <line> [| <line>...]'");
+                    }
+
+                    room.Visitors[ch] = (parts[0], parts[1..]);
+                    break;
                 default: throw new PipelineException($"{name}: unknown header key '{keyParts[0]}'");
             }
         }
