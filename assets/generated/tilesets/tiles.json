@@ -1,0 +1,37 @@
+{
+  "floor": {
+    "carpet_red": [
+      0,
+      0
+    ],
+    "dirt": [
+      1,
+      0
+    ],
+    "stone": [
+      2,
+      0
+    ],
+    "wood": [
+      3,
+      0
+    ]
+  },
+  "wall": {
+    "plaster": [
+      0,
+      0
+    ],
+    "stone": [
+      1,
+      0
+    ]
+  },
+  "door": {
+    "cellar_door": "res://scenes/generated/props/cellar_door.tscn"
+  },
+  "prop": {
+    "table": "res://scenes/generated/props/table.tscn",
+    "table_large": "res://scenes/generated/props/table_large.tscn"
+  }
+}

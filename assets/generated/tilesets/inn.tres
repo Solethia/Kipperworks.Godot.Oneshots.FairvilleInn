@@ -1,0 +1,44 @@
+[gd_resource type="TileSet" load_steps=6 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/generated/tilesets/floors.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/generated/tilesets/walls.png" id="2"]
+
+[sub_resource type="NavigationPolygon" id="nav_diamond"]
+vertices = PackedVector2Array(-32, 0, 0, -16, 32, 0, 0, 16)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-32, 0, 0, -16, 32, 0, 0, 16)])
+
+[sub_resource type="TileSetAtlasSource" id="floors"]
+resource_name = "Floors"
+texture = ExtResource("1")
+texture_region_size = Vector2i(64, 32)
+0:0/0 = 0
+0:0/0/navigation_layer_0/polygon = SubResource("nav_diamond")
+1:0/0 = 0
+1:0/0/navigation_layer_0/polygon = SubResource("nav_diamond")
+2:0/0 = 0
+2:0/0/navigation_layer_0/polygon = SubResource("nav_diamond")
+3:0/0 = 0
+3:0/0/navigation_layer_0/polygon = SubResource("nav_diamond")
+
+[sub_resource type="TileSetAtlasSource" id="walls"]
+resource_name = "Walls"
+texture = ExtResource("2")
+texture_region_size = Vector2i(64, 96)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, 32)
+0:0/0/y_sort_origin = 8
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, 0, 0, -16, 32, 0, 0, 16)
+1:0/0 = 0
+1:0/0/texture_origin = Vector2i(0, 32)
+1:0/0/y_sort_origin = 8
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, 0, 0, -16, 32, 0, 0, 16)
+
+[resource]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+physics_layer_0/collision_layer = 1
+navigation_layer_0/layers = 1
+sources/0 = SubResource("floors")
+sources/1 = SubResource("walls")
