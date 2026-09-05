@@ -93,6 +93,6 @@ public static class PreviewRoom
         }
 
         return table.Where(kv => kv.Key != avoid).Select(kv => kv.Value).FirstOrDefault()
-            ?? throw new PipelineException("preview needs at least one other packed floor and wall");
+            ?? throw new PipelineException("preview needs at least one packed tile besides the one being previewed");
     }
 }
