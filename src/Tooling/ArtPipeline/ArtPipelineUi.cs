@@ -130,16 +130,24 @@ public partial class ArtPipelineUi : Control
 
         static void Fill(OptionButton button, IEnumerable<string> names, string preferred)
         {
-            var current = button.Selected >= 0 ? button.GetItemText(button.Selected) : preferred;
+            var current = button.Selected >= 0 ? button.GetItemText(button.Selected) : null;
+            var ordered = names.OrderBy(n => n).ToList();
+
             button.Clear();
-            foreach (var name in names)
+            foreach (var name in ordered)
             {
                 button.AddItem(name);
-                if (name == current)
-                {
-                    button.Select(button.ItemCount - 1);
-                }
             }
+
+            if (ordered.Count == 0)
+            {
+                return;
+            }
+
+            var desired = current is not null && ordered.Contains(current) ? current
+                : ordered.Contains(preferred) ? preferred
+                : ordered[0];
+            button.Select(ordered.IndexOf(desired));
         }
     }
 
