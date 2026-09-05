@@ -233,7 +233,7 @@ text = "Create room scene"
 layout_mode = 2
 autowrap_mode = 3
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
-text = "Creates a walled scenes/rooms/<name>.tscn. Paint it in the Godot editor: Floor and Walls layers use the Floors/Walls tiles, the Props layer paints doors and props from the Props source. Visitors go under Actors by hand."
+text = "Creates a walled room scene at scenes/rooms/<name>.tscn. Paint it in the Godot editor: Floor and Walls layers use the Floors/Walls tiles, the Props layer paints doors and props from the Props source. Visitors go under Actors by hand."
 
 [node name="Log" type="RichTextLabel" parent="Margin/Root"]
 unique_name_in_owner = true
