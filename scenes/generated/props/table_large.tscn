@@ -3,10 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/generated/props/table_large.png" id="1"]
 
 [node name="TableLarge" type="StaticBody2D"]
+y_sort_enabled = true
 
 [node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(0, 16)
 texture = ExtResource("1")
 offset = Vector2(0, -16)
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+position = Vector2(0, 16)
 polygon = PackedVector2Array(-64, 0, 0, -32, 64, 0, 0, 32)

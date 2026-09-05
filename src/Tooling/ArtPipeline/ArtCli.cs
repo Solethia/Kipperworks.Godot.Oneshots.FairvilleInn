@@ -7,8 +7,8 @@ namespace FairvilleInn.Tooling.ArtPipeline;
 // Headless entry point:  godot --headless --path . tools/art_cli.tscn -- <command> [args]
 //   placeholders                       regenerate the project's coloured placeholder assets
 //   new <type> <name> [display] [WxH] [height]
-//   pack                               assets/art -> assets/generated + scenes/generated, rebuild rooms
-//   rooms                              rebuild scenes/rooms/*.tscn from rooms/*.txt
+//   pack                               assets/art -> assets/generated + scenes/generated
+//   room <name> [WxH] [floor] [wall]   scaffold scenes/rooms/<name>.tscn to paint in the editor
 //   preview <type> <name>              pack + write scenes/rooms/_preview.tscn
 //   validate
 public partial class ArtCli : Node
@@ -25,6 +25,12 @@ public partial class ArtCli : Node
         {
             GD.PrintErr(e.Message);
             code = 1;
+        }
+        catch (Exception e)
+        {
+            // Headless runs must always quit, otherwise a crash leaves the process hanging.
+            GD.PrintErr(e.ToString());
+            code = 2;
         }
 
         GetTree().Quit(code);
@@ -55,12 +61,20 @@ public partial class ArtCli : Node
             }
             case "pack":
                 Packer.PackAll();
-                GD.Print(string.Join("\n", RoomBuilder.BuildAll()));
                 GD.Print("packed");
                 break;
-            case "rooms":
-                GD.Print(string.Join("\n", RoomBuilder.BuildAll()));
+            case "room":
+            {
+                const string usage = "usage: room <name> [WxH] [floor] [wall]";
+                if (args.Length is < 2 or > 5)
+                {
+                    throw new PipelineException(usage);
+                }
+
+                var (w, h) = args.Length > 2 ? ParseSize(args[2], usage) : (12, 10);
+                GD.Print(RoomScene.Scaffold(args[1], w, h, args.Length > 3 ? args[3] : "wood", args.Length > 4 ? args[4] : "plaster"));
                 break;
+            }
             case "preview":
             {
                 if (args.Length != 3)
@@ -69,7 +83,6 @@ public partial class ArtCli : Node
                 }
 
                 Packer.PackAll();
-                RoomBuilder.BuildAll();
                 var meta = AssetMeta.All(args[1]).FirstOrDefault(m => m.Name == args[2])
                     ?? throw new PipelineException($"no asset {args[1]}/{args[2]}");
                 GD.Print(PreviewRoom.Build(meta));
@@ -89,7 +102,7 @@ public partial class ArtCli : Node
                 break;
             }
             default:
-                GD.Print("commands: placeholders | new <type> <name> [display] [WxH] [height] | pack | rooms | preview <type> <name> | validate");
+                GD.Print("commands: placeholders | new <type> <name> [display] [WxH] [height] | pack | room <name> [WxH] [floor] [wall] | preview <type> <name> | validate");
                 break;
         }
     }

@@ -21,6 +21,11 @@ public partial class ArtPipelineUi : Control
     private RichTextLabel _log = null!;
     private Button _test = null!;
     private Button _open = null!;
+    private LineEdit _roomName = null!;
+    private SpinBox _roomW = null!;
+    private SpinBox _roomH = null!;
+    private OptionButton _roomFloor = null!;
+    private OptionButton _roomWall = null!;
 
     private readonly List<AssetMeta> _listed = [];
 
@@ -38,6 +43,11 @@ public partial class ArtPipelineUi : Control
         _log = GetNode<RichTextLabel>("%Log");
         _test = GetNode<Button>("%Test");
         _open = GetNode<Button>("%Open");
+        _roomName = GetNode<LineEdit>("%RoomName");
+        _roomW = GetNode<SpinBox>("%RoomW");
+        _roomH = GetNode<SpinBox>("%RoomH");
+        _roomFloor = GetNode<OptionButton>("%RoomFloor");
+        _roomWall = GetNode<OptionButton>("%RoomWall");
 
         foreach (var type in AssetTypes.All)
         {
@@ -51,14 +61,16 @@ public partial class ArtPipelineUi : Control
         GetNode<Button>("%PackAll").Pressed += () => Guard(() =>
         {
             Packer.PackAll();
-            RoomBuilder.BuildAll();
-            Log("Packed all assets and rebuilt rooms.");
+            RefreshRoomDefaults();
+            Log("Packed all assets. Rooms pick up the new palette when reopened in the editor.");
         });
+        GetNode<Button>("%NewRoom").Pressed += () => Guard(NewRoom);
         GetNode<Button>("%Refresh").Pressed += RefreshAssets;
         _assets.ItemSelected += _ => UpdateButtons();
 
         OnTypeChanged();
         RefreshAssets();
+        Guard(RefreshRoomDefaults);
     }
 
     private AssetType SelectedType => AssetTypes.Get(_type.GetItemText(_type.Selected));
@@ -110,6 +122,47 @@ public partial class ArtPipelineUi : Control
         OS.ShellOpen(Paths.Global(SelectedAsset!.FolderRes));
     }
 
+    private void RefreshRoomDefaults()
+    {
+        var index = Packer.LoadIndex();
+        Fill(_roomFloor, index.Floor.Keys, "wood");
+        Fill(_roomWall, index.Wall.Keys, "plaster");
+
+        static void Fill(OptionButton button, IEnumerable<string> names, string preferred)
+        {
+            var current = button.Selected >= 0 ? button.GetItemText(button.Selected) : null;
+            var ordered = names.OrderBy(n => n).ToList();
+
+            button.Clear();
+            foreach (var name in ordered)
+            {
+                button.AddItem(name);
+            }
+
+            if (ordered.Count == 0)
+            {
+                return;
+            }
+
+            var desired = current is not null && ordered.Contains(current) ? current
+                : ordered.Contains(preferred) ? preferred
+                : ordered[0];
+            button.Select(ordered.IndexOf(desired));
+        }
+    }
+
+    private void NewRoom()
+    {
+        if (_roomFloor.Selected < 0 || _roomWall.Selected < 0)
+        {
+            throw new PipelineException("pack at least one floor and one wall first");
+        }
+
+        var scene = RoomScene.Scaffold(_roomName.Text.Trim(), (int)_roomW.Value, (int)_roomH.Value,
+            _roomFloor.GetItemText(_roomFloor.Selected), _roomWall.GetItemText(_roomWall.Selected));
+        Log($"Created {scene} — open it in the Godot editor and paint with the TileMap panel.");
+    }
+
     private void Test()
     {
         var meta = SelectedAsset!;
@@ -120,7 +173,6 @@ public partial class ArtPipelineUi : Control
         }
 
         Packer.PackAll();
-        RoomBuilder.BuildAll();
         var room = PreviewRoom.Build(meta);
         Log("Packed. Importing textures…");
 

@@ -8,7 +8,6 @@ public static class Paths
     public const string ArtRes = "res://assets/art";                 // artist-owned sources (.gdignore'd)
     public const string GeneratedRes = "res://assets/generated";     // packed runtime assets
     public const string GeneratedScenesRes = "res://scenes/generated";
-    public const string RoomsRes = "res://rooms";
     public const string RoomScenesRes = "res://scenes/rooms";
     public const string TileSetRes = GeneratedRes + "/tilesets/inn.tres";
     public const string TilesIndexRes = GeneratedRes + "/tilesets/tiles.json";

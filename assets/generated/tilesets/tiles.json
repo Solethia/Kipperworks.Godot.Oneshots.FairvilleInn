@@ -28,10 +28,19 @@
     ]
   },
   "door": {
-    "cellar_door": "res://scenes/generated/props/cellar_door.tscn"
+    "cellar_door": {
+      "scene": "res://scenes/generated/props/cellar_door.tscn",
+      "id": 1
+    }
   },
   "prop": {
-    "table": "res://scenes/generated/props/table.tscn",
-    "table_large": "res://scenes/generated/props/table_large.tscn"
+    "table": {
+      "scene": "res://scenes/generated/props/table.tscn",
+      "id": 2
+    },
+    "table_large": {
+      "scene": "res://scenes/generated/props/table_large.tscn",
+      "id": 3
+    }
   }
 }
