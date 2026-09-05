@@ -165,7 +165,75 @@ size_flags_horizontal = 3
 [node name="PackAll" type="Button" parent="Margin/Root/ActionRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Pack all + rebuild rooms"
+text = "Pack all"
+
+[node name="RoomSep" type="HSeparator" parent="Margin/Root"]
+layout_mode = 2
+
+[node name="RoomRow" type="HBoxContainer" parent="Margin/Root"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RoomLabel" type="Label" parent="Margin/Root/RoomRow"]
+layout_mode = 2
+text = "New room"
+
+[node name="RoomName" type="LineEdit" parent="Margin/Root/RoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g. cellar"
+
+[node name="RoomSizeLabel" type="Label" parent="Margin/Root/RoomRow"]
+layout_mode = 2
+text = "Size (tiles)"
+
+[node name="RoomW" type="SpinBox" parent="Margin/Root/RoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 3.0
+max_value = 64.0
+value = 12.0
+
+[node name="RoomX" type="Label" parent="Margin/Root/RoomRow"]
+layout_mode = 2
+text = "×"
+
+[node name="RoomH" type="SpinBox" parent="Margin/Root/RoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 3.0
+max_value = 64.0
+value = 10.0
+
+[node name="RoomFloorLabel" type="Label" parent="Margin/Root/RoomRow"]
+layout_mode = 2
+text = "Floor"
+
+[node name="RoomFloor" type="OptionButton" parent="Margin/Root/RoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+
+[node name="RoomWallLabel" type="Label" parent="Margin/Root/RoomRow"]
+layout_mode = 2
+text = "Wall"
+
+[node name="RoomWall" type="OptionButton" parent="Margin/Root/RoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(110, 0)
+
+[node name="NewRoom" type="Button" parent="Margin/Root/RoomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Create room scene"
+
+[node name="RoomInfo" type="Label" parent="Margin/Root"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+text = "Creates a walled scenes/rooms/<name>.tscn. Paint it in the Godot editor: Floor and Walls layers use the Floors/Walls tiles, the Props layer paints doors and props from the Props source. Visitors go under Actors by hand."
 
 [node name="Log" type="RichTextLabel" parent="Margin/Root"]
 unique_name_in_owner = true

@@ -64,7 +64,8 @@ public partial class OcclusionFader : Node2D
             }
 
             var rect = sprite.GlobalTransform * sprite.GetRect();
-            var covers = prop.GlobalPosition.Y > subjectSortY && rect.Intersects(subject);
+            // Multi-tile props anchor on their top-left cell; the sprite sits at the footprint centre, which is what y-sorts.
+            var covers = sprite.GlobalPosition.Y > subjectSortY && rect.Intersects(subject);
             var target = covers ? FadedAlpha : 1.0f;
             var colour = sprite.Modulate;
             colour.A = Mathf.MoveToward(colour.A, target, delta * FadeSpeed);

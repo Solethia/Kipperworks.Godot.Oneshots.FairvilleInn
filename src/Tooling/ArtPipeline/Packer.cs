@@ -8,18 +8,36 @@ using static FairvilleInn.Tooling.ArtPipeline.Iso;
 namespace FairvilleInn.Tooling.ArtPipeline;
 
 // Packs assets/art into runtime assets: tile atlases + TileSet, prop sheets + scenes,
-// and tiles.json (asset name -> atlas coords / scene path) that RoomBuilder consumes.
+// and tiles.json (asset name -> atlas coords / scene tile id) so the room editor and the
+// preview room can refer to assets by name.
+//
+// Rooms are painted in the Godot editor with the packed TileSet, so slots must be stable:
+// a floor keeps its atlas coordinates and a prop keeps its scene-tile id across repacks.
+// New assets take the lowest free slot; the previous tiles.json is the source of truth.
 public static class Packer
 {
+    public const int FloorSource = 0;
+    public const int WallSource = 1;
+    public const int PropsSource = 2;
+
     private const int AtlasColumns = 8;
     private const string Diamond = "-32, 0, 0, -16, 32, 0, 0, 16";
+
+    public sealed class SceneTile
+    {
+        public string Scene { get; set; } = "";
+        public int Id { get; set; }
+    }
 
     public sealed class Index
     {
         public Dictionary<string, int[]> Floor { get; set; } = [];
         public Dictionary<string, int[]> Wall { get; set; } = [];
-        public Dictionary<string, string> Door { get; set; } = [];
-        public Dictionary<string, string> Prop { get; set; } = [];
+        public Dictionary<string, SceneTile> Door { get; set; } = [];
+        public Dictionary<string, SceneTile> Prop { get; set; } = [];
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public IEnumerable<KeyValuePair<string, SceneTile>> SceneTiles => Door.Concat(Prop);
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
@@ -32,23 +50,34 @@ public static class Packer
             problems.AddRange(AssetTypes.Get(meta.Type).Validate(meta).Select(p => $"{meta.Type}/{meta.Name}: {p}"));
         }
 
+        var doors = AssetMeta.All("door");
+        var props = AssetMeta.All("prop");
+        foreach (var clash in doors.Select(m => m.Name).Intersect(props.Select(m => m.Name)))
+        {
+            problems.Add($"'{clash}' is both a door and a prop; doors and props share one scene folder and palette");
+        }
+
         if (problems.Count > 0)
         {
             throw new PipelineException("Cannot pack, fix these first:\n" + string.Join("\n", problems));
         }
 
+        var previous = LoadPreviousIndex();
         var index = new Index();
-        PackTiles(index);
-        foreach (var meta in AssetMeta.All("door"))
+        PackTiles(index, previous);
+
+        var sceneIds = AssignSceneIds(previous, doors.Concat(props).Select(m => m.Name));
+        foreach (var meta in doors)
         {
-            index.Door[meta.Name] = PackDoor(meta);
+            index.Door[meta.Name] = new SceneTile { Scene = PackDoor(meta), Id = sceneIds[meta.Name] };
         }
 
-        foreach (var meta in AssetMeta.All("prop"))
+        foreach (var meta in props)
         {
-            index.Prop[meta.Name] = PackProp(meta);
+            index.Prop[meta.Name] = new SceneTile { Scene = PackProp(meta), Id = sceneIds[meta.Name] };
         }
 
+        WriteTileSet(index);
         Files.WriteText(Paths.TilesIndexRes, JsonSerializer.Serialize(index, JsonOptions) + "\n");
         return index;
     }
@@ -63,38 +92,152 @@ public static class Packer
         return JsonSerializer.Deserialize<Index>(Files.ReadText(Paths.TilesIndexRes), JsonOptions)!;
     }
 
-    private static (Image atlas, Dictionary<string, int[]> coords) Atlas(List<AssetMeta> metas, int tileH)
+    // Slot assignments from the last pack. Tolerates the pre-scene-tile format, where door
+    // and prop entries were plain scene paths (those get fresh ids).
+    private static Index LoadPreviousIndex()
     {
-        var count = Mathf.Max(metas.Count, 1);
-        var rows = (count + AtlasColumns - 1) / AtlasColumns;
-        var atlas = Painter.Blank(TileW * Mathf.Min(count, AtlasColumns), tileH * rows);
-        var coords = new Dictionary<string, int[]>();
-        for (var i = 0; i < metas.Count; i++)
+        if (!FileAccess.FileExists(Paths.TilesIndexRes))
         {
-            int col = i % AtlasColumns, row = i / AtlasColumns;
-            var tile = Files.LoadPng(Paths.Join(metas[i].FolderRes, "tile.png"));
-            tile.Convert(Image.Format.Rgba8);
-            atlas.BlitRect(tile, new Rect2I(Vector2I.Zero, tile.GetSize()), new Vector2I(col * TileW, row * tileH));
-            coords[metas[i].Name] = [col, row];
+            return new Index();
         }
 
-        return (atlas, coords);
+        using var doc = JsonDocument.Parse(Files.ReadText(Paths.TilesIndexRes));
+        var index = new Index();
+        foreach (var prop in doc.RootElement.EnumerateObject())
+        {
+            switch (prop.Name)
+            {
+                case "floor": index.Floor = Coords(prop.Value); break;
+                case "wall": index.Wall = Coords(prop.Value); break;
+                case "door": index.Door = Scenes(prop.Value); break;
+                case "prop": index.Prop = Scenes(prop.Value); break;
+            }
+        }
+
+        return index;
+
+        static Dictionary<string, int[]> Coords(JsonElement e) =>
+            e.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.EnumerateArray().Select(v => v.GetInt32()).ToArray());
+
+        static Dictionary<string, SceneTile> Scenes(JsonElement e) =>
+            e.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.ValueKind == JsonValueKind.String
+                ? new SceneTile { Scene = p.Value.GetString()!, Id = 0 }
+                : JsonSerializer.Deserialize<SceneTile>(p.Value.GetRawText(), JsonOptions)!);
     }
 
-    private static void PackTiles(Index index)
+    // Keeps previously assigned atlas cells; new names fill the lowest free cell.
+    private static Dictionary<string, int[]> AssignCoords(Dictionary<string, int[]> previous, IEnumerable<string> names)
+    {
+        var coords = new Dictionary<string, int[]>();
+        var used = new HashSet<(int, int)>();
+        var fresh = new List<string>();
+        foreach (var name in names)
+        {
+            if (previous.TryGetValue(name, out var c) && used.Add((c[0], c[1])))
+            {
+                coords[name] = c;
+            }
+            else
+            {
+                fresh.Add(name);
+            }
+        }
+
+        var slot = 0;
+        foreach (var name in fresh)
+        {
+            while (used.Contains((slot % AtlasColumns, slot / AtlasColumns)))
+            {
+                slot++;
+            }
+
+            coords[name] = [slot % AtlasColumns, slot / AtlasColumns];
+            used.Add((coords[name][0], coords[name][1]));
+        }
+
+        return coords;
+    }
+
+    // Scene-tile ids start at 1 (0 is not a valid alternative-tile id for scene collections).
+    private static Dictionary<string, int> AssignSceneIds(Index previous, IEnumerable<string> names)
+    {
+        var known = previous.SceneTiles.ToDictionary(kv => kv.Key, kv => kv.Value.Id);
+        var ids = new Dictionary<string, int>();
+        var used = new HashSet<int>();
+        var fresh = new List<string>();
+        foreach (var name in names)
+        {
+            if (known.TryGetValue(name, out var id) && id > 0 && used.Add(id))
+            {
+                ids[name] = id;
+            }
+            else
+            {
+                fresh.Add(name);
+            }
+        }
+
+        var next = 1;
+        foreach (var name in fresh)
+        {
+            while (used.Contains(next))
+            {
+                next++;
+            }
+
+            ids[name] = next;
+            used.Add(next);
+        }
+
+        return ids;
+    }
+
+    private static Image Atlas(List<AssetMeta> metas, Dictionary<string, int[]> coords, int tileH)
+    {
+        var maxCol = metas.Count == 0 ? 0 : metas.Max(m => coords[m.Name][0]);
+        var maxRow = metas.Count == 0 ? 0 : metas.Max(m => coords[m.Name][1]);
+        var atlas = Painter.Blank(TileW * (maxCol + 1), tileH * (maxRow + 1));
+        foreach (var meta in metas)
+        {
+            var (col, row) = (coords[meta.Name][0], coords[meta.Name][1]);
+            var tile = Files.LoadPng(Paths.Join(meta.FolderRes, "tile.png"));
+            tile.Convert(Image.Format.Rgba8);
+            atlas.BlitRect(tile, new Rect2I(Vector2I.Zero, tile.GetSize()), new Vector2I(col * TileW, row * tileH));
+        }
+
+        return atlas;
+    }
+
+    private static void PackTiles(Index index, Index previous)
     {
         var outDir = Paths.GeneratedRes + "/tilesets";
-        var (floorImg, floorCoords) = Atlas(AssetMeta.All("floor"), TileH);
-        var (wallImg, wallCoords) = Atlas(AssetMeta.All("wall"), WallH);
-        index.Floor = floorCoords;
-        index.Wall = wallCoords;
-        Files.SavePng(floorImg, $"{outDir}/floors.png");
-        Files.SavePng(wallImg, $"{outDir}/walls.png");
+        var floors = AssetMeta.All("floor");
+        var walls = AssetMeta.All("wall");
+        index.Floor = AssignCoords(previous.Floor, floors.Select(m => m.Name));
+        index.Wall = AssignCoords(previous.Wall, walls.Select(m => m.Name));
+        Files.SavePng(Atlas(floors, index.Floor, TileH), $"{outDir}/floors.png");
+        Files.SavePng(Atlas(walls, index.Wall, WallH), $"{outDir}/walls.png");
+    }
+
+    // One TileSet with three sources: Floors and Walls atlases, plus a Props scene
+    // collection holding every door and prop scene so they can be painted like tiles.
+    private static void WriteTileSet(Index index)
+    {
+        var outDir = Paths.GeneratedRes + "/tilesets";
+        var sceneTiles = index.SceneTiles.OrderBy(kv => kv.Value.Id).ToList();
+        var floorCoords = index.Floor;
+        var wallCoords = index.Wall;
 
         var sb = new StringBuilder();
-        sb.AppendLine("[gd_resource type=\"TileSet\" load_steps=6 format=3]").AppendLine()
+        sb.AppendLine($"[gd_resource type=\"TileSet\" load_steps={7 + sceneTiles.Count} format=3]").AppendLine()
             .AppendLine($"[ext_resource type=\"Texture2D\" path=\"{outDir}/floors.png\" id=\"1\"]")
-            .AppendLine($"[ext_resource type=\"Texture2D\" path=\"{outDir}/walls.png\" id=\"2\"]").AppendLine()
+            .AppendLine($"[ext_resource type=\"Texture2D\" path=\"{outDir}/walls.png\" id=\"2\"]");
+        foreach (var (name, tile) in sceneTiles)
+        {
+            sb.AppendLine($"[ext_resource type=\"PackedScene\" path=\"{tile.Scene}\" id=\"scene_{name}\"]");
+        }
+
+        sb.AppendLine()
             .AppendLine("[sub_resource type=\"NavigationPolygon\" id=\"nav_diamond\"]")
             .AppendLine($"vertices = PackedVector2Array({Diamond})")
             .AppendLine("polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])")
@@ -120,14 +263,23 @@ public static class Packer
                 .AppendLine($"{c}:{r}/0/physics_layer_0/polygon_0/points = PackedVector2Array({Diamond})");
         }
 
+        sb.AppendLine().AppendLine("[sub_resource type=\"TileSetScenesCollectionSource\" id=\"props\"]")
+            .AppendLine("resource_name = \"Props\"");
+        foreach (var (name, tile) in sceneTiles)
+        {
+            sb.AppendLine($"scenes/{tile.Id}/scene = ExtResource(\"scene_{name}\")")
+                .AppendLine($"scenes/{tile.Id}/display_placeholder = false");
+        }
+
         sb.AppendLine().AppendLine("[resource]")
             .AppendLine("tile_shape = 1")
             .AppendLine("tile_layout = 5")
             .AppendLine($"tile_size = Vector2i({TileW}, {TileH})")
             .AppendLine("physics_layer_0/collision_layer = 1")
             .AppendLine("navigation_layer_0/layers = 1")
-            .AppendLine("sources/0 = SubResource(\"floors\")")
-            .AppendLine("sources/1 = SubResource(\"walls\")");
+            .AppendLine($"sources/{FloorSource} = SubResource(\"floors\")")
+            .AppendLine($"sources/{WallSource} = SubResource(\"walls\")")
+            .AppendLine($"sources/{PropsSource} = SubResource(\"props\")");
         Files.WriteText(Paths.TileSetRes, sb.ToString());
     }
 
@@ -183,7 +335,11 @@ public static class Packer
 
         int fw = meta.FootprintW * TileW, fh = meta.FootprintH * TileH;
         var imageH = fh + meta.Height;
-        // Sprite is centred on the node; shift it up so the footprint diamond centre sits on the origin.
+        // The node origin is the centre of the footprint's anchor cell (top-left), which is
+        // where a TileMapLayer places a painted scene tile. The sprite and collision are
+        // shifted to the footprint centre; y-sorting the root makes the sprite sort there too.
+        var anchor = BlockCentre(0, 0, meta.FootprintW, meta.FootprintH) - CellCentre(0, 0);
+        // Sprite is centred on its node; shift it up so the footprint diamond centre sits on the node.
         var offsetY = (fh - imageH) / 2f;
         var scene = $"{Paths.GeneratedScenesRes}/props/{meta.Name}.tscn";
         Files.WriteText(scene, string.Join("\n",
@@ -192,12 +348,15 @@ public static class Packer
             $"[ext_resource type=\"Texture2D\" path=\"{png}\" id=\"1\"]",
             "",
             $"[node name=\"{NodeName(meta.Name)}\" type=\"StaticBody2D\"]",
+            "y_sort_enabled = true",
             "",
             "[node name=\"Sprite\" type=\"Sprite2D\" parent=\".\"]",
+            $"position = Vector2({Tscn.Num(anchor.X)}, {Tscn.Num(anchor.Y)})",
             "texture = ExtResource(\"1\")",
             $"offset = Vector2(0, {Tscn.Num(offsetY)})",
             "",
             "[node name=\"CollisionPolygon2D\" type=\"CollisionPolygon2D\" parent=\".\"]",
+            $"position = Vector2({Tscn.Num(anchor.X)}, {Tscn.Num(anchor.Y)})",
             $"polygon = PackedVector2Array({-fw / 2}, 0, 0, {-fh / 2}, {fw / 2}, 0, 0, {fh / 2})",
             ""));
         return scene;

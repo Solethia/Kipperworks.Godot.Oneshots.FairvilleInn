@@ -1,10 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="TileSet" path="res://assets/generated/tilesets/inn.tres" id="tileset"]
 [ext_resource type="Script" path="res://src/Presentation/World/OccludingWallLayer.cs" id="walls_script"]
 [ext_resource type="PackedScene" path="res://scenes/characters/visitor.tscn" id="visitor"]
-[ext_resource type="PackedScene" path="res://scenes/generated/props/cellar_door.tscn" id="door_cellar_door"]
-[ext_resource type="PackedScene" path="res://scenes/generated/props/table_large.tscn" id="prop_table_large"]
 
 [node name="taproom" type="Node2D" groups=["navigation_source"]]
 y_sort_enabled = true
@@ -24,29 +22,11 @@ script = ExtResource("walls_script")
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(0, 320)
 
-[node name="Props" type="Node2D" parent="."]
+[node name="Props" type="TileMapLayer" parent="."]
 y_sort_enabled = true
-
-[node name="Door1" parent="Props" instance=ExtResource("door_cellar_door")]
-position = Vector2(320, 416)
-
-[node name="TableLarge1" parent="Props" instance=ExtResource("prop_table_large")]
-position = Vector2(64, 112)
-
-[node name="TableLarge2" parent="Props" instance=ExtResource("prop_table_large")]
-position = Vector2(352, 256)
-
-[node name="TableLarge3" parent="Props" instance=ExtResource("prop_table_large")]
-position = Vector2(-96, 192)
-
-[node name="TableLarge4" parent="Props" instance=ExtResource("prop_table_large")]
-position = Vector2(160, 320)
-
-[node name="TableLarge5" parent="Props" instance=ExtResource("prop_table_large")]
-position = Vector2(-256, 272)
-
-[node name="TableLarge6" parent="Props" instance=ExtResource("prop_table_large")]
-position = Vector2(32, 416)
+tile_set = ExtResource("tileset")
+tile_map_data = PackedByteArray(0, 0, 17, 0, 8, 0, 2, 0, 0, 0, 0, 0, 1, 0, 3, 0, 2, 0, 2, 0, 0, 0, 0, 0, 3, 0, 12, 0, 2, 0, 2, 0, 0, 0, 0, 0, 3, 0, 3, 0, 7, 0, 2, 0, 0, 0, 0, 0, 3, 0, 11, 0, 7, 0, 2, 0, 0, 0, 0, 0, 3, 0, 3, 0, 12, 0, 2, 0, 0, 0, 0, 0, 3, 0, 12, 0, 12, 0, 2, 0, 0, 0, 0, 0, 3, 0)
+navigation_enabled = false
 
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true
